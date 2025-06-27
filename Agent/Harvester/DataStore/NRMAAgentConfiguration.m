@@ -25,6 +25,9 @@ static NSUInteger __NRMA__maxEventBufferTime = 600;
 static NSUInteger __NRMA__maxEventBufferSize = 1000;
 static NSUInteger __NRMA__maxOfflineStorageSize = 100000000; // 100 mb
 
+// Network domain filtering
+static NSArray<NSString*>* __NRMA__ignoredNetworkDomains = nil;
+
 @implementation NRMAAgentConfiguration
 
 + (void)setApplicationVersion:(NSString *)versionString
@@ -64,6 +67,14 @@ static NSUInteger __NRMA__maxOfflineStorageSize = 100000000; // 100 mb
 
 + (NSUInteger) getMaxOfflineStorageSize {
     return __NRMA__maxOfflineStorageSize;
+}
+
++ (void) setIgnoredNetworkDomains:(NSArray<NSString*>*)ignoredDomains {
+    __NRMA__ignoredNetworkDomains = ignoredDomains ? [ignoredDomains copy] : nil;
+}
+
++ (NSArray<NSString*>*) getIgnoredNetworkDomains {
+    return __NRMA__ignoredNetworkDomains ? [__NRMA__ignoredNetworkDomains copy] : @[];
 }
 
 - (id) initWithAppToken:(NRMAAppToken*)token

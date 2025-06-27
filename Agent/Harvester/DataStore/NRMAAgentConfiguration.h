@@ -53,4 +53,8 @@
 
 + (void) setMaxOfflineStorageSize:(NSUInteger)megabytes;
 + (NSUInteger) getMaxOfflineStorageSize;
+
++ (void) setIgnoredNetworkDomains:(NSArray<NSString*>*)ignoredDomains;
++ (NSArray<NSString*>*) getIgnoredNetworkDomains;
+
 @end

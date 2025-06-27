@@ -758,6 +758,14 @@
 
     [NRMAHarvestController setMaxOfflineStorageSize:megabytes];
 }
+
++ (void) setIgnoredNetworkDomains:(NSArray<NSString*>*)ignoredDomains {
+    if ([NewRelicAgentInternal sharedInstance] != nil) {
+        @throw [NSException exceptionWithName:@"InvalidUsageException" reason:[NSString stringWithFormat:@"'%@' may only be called prior to calling +[NewRelic startWithApplicationToken:]",NSStringFromSelector(_cmd)] userInfo:nil];
+    }
+    [NRMAAgentConfiguration setIgnoredNetworkDomains:ignoredDomains];
+}
+
 #pragma mark - Hidden APIs
 
 
