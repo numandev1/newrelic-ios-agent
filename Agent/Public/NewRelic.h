@@ -714,6 +714,17 @@ extern "C" {
 
 + (void) setMaxOfflineStorageSize:(unsigned int)megabytes;
 
+/*!
+ Configure network domains to ignore during network request tracking.
+ Network requests to these domains will not be tracked by the agent.
+ 
+ @param ignoredDomains Array of domain names to ignore (e.g., @[@"example.com", @"api.thirdparty.com"])
+ 
+ @note This method should be called before starting the agent with startWithApplicationToken:
+ */
+
++ (void) setIgnoredNetworkDomains:(NSArray<NSString*>* _Nullable)ignoredDomains;
+
 #pragma mark - Tracking global attributes
 
 /*!

@@ -31,6 +31,7 @@
 #import "NRMASAM.h"
 #import "NRMAAttributeValidator.h"
 #import "NRMASessionEvent.h"
+#import "NRMAAgentConfiguration.h"
 
 //******************* THIS FILE HAS ARC DISABLED *******************
 // TODO: RE-ENABLE ARC WHEN THE C++ IS REMOVED
@@ -48,6 +49,31 @@ using namespace NewRelic;
     NRMASAM *_sessionAttributeManager;
     NSDate *_sessionStartTime;
     id<AttributeValidatorProtocol> _attributeValidator;
+}
+
++ (BOOL)shouldIgnoreNetworkRequest:(NSString*)url {
+    if (!url || url.length == 0) {
+        return NO;
+    }
+    
+    NSURL *urlObj = [NSURL URLWithString:url];
+    if (!urlObj || !urlObj.host || urlObj.host.length == 0) {
+        return NO;
+    }
+    
+    NSArray<NSString*> *ignoredDomains = [NRMAAgentConfiguration getIgnoredNetworkDomains];
+    NSString *host = urlObj.host;
+    
+    for (NSString *ignoredDomain in ignoredDomains) {
+        if (ignoredDomain && ignoredDomain.length > 0) {
+            // Check exact match or subdomain match
+            if ([host isEqualToString:ignoredDomain] || [host hasSuffix:[@"." stringByAppendingString:ignoredDomain]]) {
+                return YES;
+            }
+        }
+    }
+    
+    return NO;
 }
 
 static PersistentStore<std::string,BaseValue>* __attributeStore;
@@ -243,6 +269,12 @@ static PersistentStore<std::string,AnalyticEvent>* __eventStore;
             withNRMAPayload:(NRMAPayload *)payload {
 
     @try {
+        // Check if the domain should be ignored
+        if ([NRMAAnalytics shouldIgnoreNetworkRequest:requestData.requestUrl]) {
+            NRLOG_AGENT_DEBUG(@"Ignoring network request to filtered domain: %@", requestData.requestUrl);
+            return NO;
+        }
+        
         NSString* distributedTracingId = @"";
         NSString* traceId = @"";
         bool addDistributedTracing = false;
@@ -337,6 +369,12 @@ static PersistentStore<std::string,AnalyticEvent>* __eventStore;
                 withResponse:(NRMANetworkResponseData *)responseData
                  withNRMAPayload:(NRMAPayload*)payload {
     if ([NRMAFlags shouldEnableRequestErrorEvents]) {
+        // Check if the domain should be ignored
+        if ([NRMAAnalytics shouldIgnoreNetworkRequest:requestData.requestUrl]) {
+            NRLOG_AGENT_DEBUG(@"Ignoring network error event to filtered domain: %@", requestData.requestUrl);
+            return NO;
+        }
+        
         NRMANetworkErrorEvent *event = (NRMANetworkErrorEvent*)[self createErrorEvent:requestData withResponse:responseData withNRMAPayload:payload];
         if(event == nil){ return NO; }
         [event addAttribute:kNRMA_Attrib_errorType value:kNRMA_Val_errorType_Network];
@@ -350,6 +388,12 @@ static PersistentStore<std::string,AnalyticEvent>* __eventStore;
             withResponse:(NRMANetworkResponseData *)responseData
             withNRMAPayload:(NRMAPayload *)payload {
     if ([NRMAFlags shouldEnableRequestErrorEvents]) {
+        // Check if the domain should be ignored
+        if ([NRMAAnalytics shouldIgnoreNetworkRequest:requestData.requestUrl]) {
+            NRLOG_AGENT_DEBUG(@"Ignoring HTTP error event to filtered domain: %@", requestData.requestUrl);
+            return NO;
+        }
+        
         NRMANetworkErrorEvent *event = (NRMANetworkErrorEvent*)[self createErrorEvent:requestData withResponse:responseData withNRMAPayload:payload];
         if(event == nil){ return NO; }
         [event addAttribute:kNRMA_Attrib_errorType value:kNRMA_Val_errorType_HTTP];
@@ -474,6 +518,12 @@ static PersistentStore<std::string,AnalyticEvent>* __eventStore;
                   withResponse:(NRMANetworkResponseData *)responseData
                    withPayload:(std::unique_ptr<const Connectivity::Payload>)payload {
     if ([NRMAFlags shouldEnableNetworkRequestEvents]) {
+        // Check if the domain should be ignored
+        if ([NRMAAnalytics shouldIgnoreNetworkRequest:requestData.requestUrl]) {
+            NRLOG_AGENT_DEBUG(@"Ignoring network request to filtered domain: %@", requestData.requestUrl);
+            return NO;
+        }
+        
         NewRelic::NetworkRequestData* networkRequestData = [requestData getNetworkRequestData];
         NewRelic::NetworkResponseData* networkResponseData = [responseData getNetworkResponseData];
         return _analyticsController->addRequestEvent(*networkRequestData, *networkResponseData, std::move(payload), [self checkOfflineStatus], [self checkBackgroundStatus]);
@@ -486,6 +536,12 @@ static PersistentStore<std::string,AnalyticEvent>* __eventStore;
                 withResponse:(NRMANetworkResponseData *)responseData
                  withPayload:(std::unique_ptr<const NewRelic::Connectivity::Payload>)payload {
     if ([NRMAFlags shouldEnableRequestErrorEvents]) {
+        // Check if the domain should be ignored
+        if ([NRMAAnalytics shouldIgnoreNetworkRequest:requestData.requestUrl]) {
+            NRLOG_AGENT_DEBUG(@"Ignoring network error event to filtered domain: %@", requestData.requestUrl);
+            return NO;
+        }
+        
         NewRelic::NetworkRequestData* networkRequestData = [requestData getNetworkRequestData];
         NewRelic::NetworkResponseData* networkResponseData = [responseData getNetworkResponseData];
 
